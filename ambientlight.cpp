@@ -508,7 +508,15 @@ void AmbientLight::ClearEffects()
 void AmbientLight::RenderConfig()
 {
     if (!m_showConfigWindow)
+    {
+        // Keep ImGui frame lifecycle balanced even while UI is hidden.
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+        ImGui::EndFrame();
+        ImGui::Render();
         return;
+    }
 
     bool open = RenderUI(m_settings, m_gameWidth, m_gameHeight);
     ShowConfigWindow(open);
