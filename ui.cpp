@@ -85,6 +85,15 @@ LRESULT UiWndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 void InitUI(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* device_context)
 {
     IMGUI_CHECKVERSION();
+
+    // Recreate ImGui context on re-init (e.g. display/HDR changes) to avoid stale frame state asserts.
+    if (ImGui::GetCurrentContext() != nullptr)
+    {
+        ImGui_ImplDX11_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+    }
+
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
 
@@ -92,29 +101,18 @@ void InitUI(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* device_context
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     // load Segoe UI font
-    ImFont* arial_font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 20.0f);
     io.Fonts->Build();
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
     // Setup Platform/Renderer backends
-    static bool firstInit = true;
-    if (!firstInit)
-    {
-        ImGui_ImplDX11_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-    }
-
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device, device_context);
 
-    // first initialization
-    if (firstInit)
-    {
-        PostMessage(hwnd, WM_TOGGLE_CONFIG_WINDOW, 1, 0);
-    }
-    firstInit = false;
+    // show config window on init
+    PostMessage(hwnd, WM_TOGGLE_CONFIG_WINDOW, 1, 0);
 }
 
 bool RenderUI(AppSettings& settings, UINT gameWidth, UINT gameHeight)
